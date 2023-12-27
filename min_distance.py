@@ -62,14 +62,14 @@ def find_min_distances(fixed_points, points):
 
     return min_distances, min_points
 
-# Example usage
-fixed_points = [[100, 200], [50, 150]]  # List of fixed points
-points = np.array([[463, 321], [285, 319], [289, 104], [400, 300], [150, 250],
-                   [300, 100], [200, 200], [450, 150], [500, 250], [350, 350]])
+# # Example usage
+# fixed_points = [[100, 200], [50, 150]]  # List of fixed points
+# points = np.array([[463, 321], [285, 319], [289, 104], [400, 300], [150, 250],
+#                    [300, 100], [200, 200], [450, 150], [500, 250], [350, 350]])
 
-# Find minimum distances in each cycle
-min_distances, min_points= find_min_distances(fixed_points, points.tolist())  # Convert back to list for popping
+# # Find minimum distances in each cycle
+# min_distances, min_points= find_min_distances(fixed_points, points.tolist())  # Convert back to list for popping
 
-print("\nMinimum distances in each cycle:")
-print(min_distances)
-print(min_points)
+# print("\nMinimum distances in each cycle:")
+# print(min_distances)
+# print(min_points)

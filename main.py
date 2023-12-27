@@ -4,6 +4,8 @@ from cv2 import aruco
 import pygame
 from pygame.locals import *
 
+from min_distance import find_min_distances
+
 # Constants
 HEIGHT = 650
 WIDTH = 650
@@ -158,6 +160,18 @@ def main():
         # mapping boundary and drawing convex hall
         mapping_boundary(img_gray,id,corners,marker_screen,boundary_markers_center)
 
+        # merging lists to get list of position of all waste_aruco marker
+        # Merge the lists
+        merged_list = organic_marker_center.copy()  # Create a copy of A to avoid modifying the original list
+        merged_list.extend(inorganic_marker_center)
+        print(merged_list)
+        
+        if len(merged_list)>4 and len(bot_marker_center)>0:
+             # getting the closest waste position
+            _,min_point=find_min_distances(bot_marker_center,merged_list)
+            _,min_point1=find_min_distances(bot_marker_center,merged_list)
+            print("m",min_point)
+            print("n",min_point1)
         cv.imshow("Frame",img_gray)
         if cv.waitKey(1) & 0xFF == ord("q"):
             break
