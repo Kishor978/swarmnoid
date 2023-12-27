@@ -51,3 +51,117 @@ class Pathfinding:
                     for nj in range(max(0, j - 1), min(len(self.nodes[i]), j + 2)):
                         if i != ni or j != nj:
                             self.nodes[i][j].neighbors.append(self.nodes[ni][nj])
+
+
+    def astar(self, start, goal):
+        """Implements the A* algorithm to find the shortest path from the start node to the goal node.
+            Updates the Pygame window to visualize the process.
+
+        Parameters:
+            start (Pathfinding.Node): The starting node.
+            goal (Pathfinding.Node): The goal node.
+        Returns:
+            A list of coordinates representing the shortest path from the start to the goal.
+        """
+        open_set = []
+        closed_set = set()
+
+        start.g = 0  # Initialize g for the start node
+
+        heapq.heappush(open_set, start)
+
+        while open_set:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+
+            current_node = heapq.heappop(open_set)
+
+            if current_node == goal:
+                path = []
+                while current_node:
+                    path.append(current_node.position)
+                    current_node = current_node.parent
+                return path[::-1]
+
+            closed_set.add(current_node)
+            current_node.color = self.RED
+            current_node.draw(self.screen, self.pixel_size)
+            pygame.display.update()
+
+            pygame.time.delay(50)
+
+            for neighbor in current_node.neighbors:
+                if neighbor in closed_set:
+                    continue
+
+                tentative_g = current_node.g + self.distance(current_node, neighbor)
+
+                if tentative_g < neighbor.g:
+                    neighbor.g = tentative_g
+                    neighbor.h = self.heuristic(neighbor, goal)
+                    neighbor.f = neighbor.g + neighbor.h
+                    neighbor.parent = current_node
+
+                    if neighbor not in open_set:
+                        heapq.heappush(open_set, neighbor)
+                        neighbor.color = self.GREEN
+                        neighbor.draw(self.screen, self.pixel_size)
+                        pygame.display.update()
+        return None
+
+    def draw_path(self, path):
+        """            
+        Draws the grid, sub-destinations, and the final path on the Pygame window.
+        Path is represented by blue lines.
+
+        Parameters:
+            path (list): List of coordinates representing the final path.
+        """
+
+        for i in range(len(self.nodes)):
+            for j in range(len(self.nodes[i])):
+                self.nodes[i][j].draw(self.screen, self.pixel_size)
+
+        if path:
+            path_coordinates = [(node[0], node[1]) for node in path]  # Extract coordinates from nodes
+            pygame.draw.lines(self.screen, self.BLUE, False, path_coordinates, 2)
+
+        pygame.display.update()
+
+
+def main():
+    pygame.init()
+    width, height = 800, 600
+
+    # Create an instance of the Pathfinding class
+    pathfinding = Pathfinding(width, height)
+
+    # Create nodes
+    pathfinding.create_nodes()
+        # Example starting and ending points
+    start_point = [308, 355]
+    end_point = [100, 100]
+
+    # Find the closest nodes to the starting and ending points
+    start_node = pathfinding.nodes[start_point[0] // pathfinding.pixel_size][start_point[1] // pathfinding.pixel_size]
+    end_node = pathfinding.nodes[end_point[0] // pathfinding.pixel_size][end_point[1] // pathfinding.pixel_size]
+
+
+    # start = pathfinding.nodes[10][10]
+    # goal = pathfinding.nodes[0][35]
+    # print(start)
+
+    # Find the path passing through the closest sub-destination
+    path = pathfinding.astar(start_node, end_node)
+
+    # Draw grid, sub-destinations, and path
+    pathfinding.draw_path(path)
+
+    
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
+
