@@ -36,12 +36,34 @@ class Pathfinding:
     
 
     def heuristic(self, node, goal):
+        """
+        This function Calculates and returns the Euclidean distance between the position of the given node and the goal node.
+
+        Parameters:
+            node (Pathfinding.Node): A node in the grid.
+            goal (Pathfinding.Node): The goal node.
+        Returns:
+            The heuristic (Euclidean distance) from the given node to the goal node.
+            Calculates and returns the Euclidean distance between the position of the given node and the goal node.
+        """
         return ((node.position[0] - goal.position[0])**2 + (node.position[1] - goal.position[1])**2)**0.5
 
     def distance(self, node1, node2):
+        """
+        Calculates and returns the Euclidean distance between the positions of two given nodes.
+
+        Parameters:
+            node1 (Pathfinding.Node): First node.
+            node2 (Pathfinding.Node): Second node.
+        Returns:
+            The Euclidean distance between the positions of the two nodes.
+        """
         return ((node1.position[0] - node2.position[0])**2 + (node1.position[1] - node2.position[1])**2)**0.5
 
     def create_nodes(self):
+        """
+        Creates a 2D grid of nodes based on the specified dimensions and assigns neighbors to each node based on a neighborhood relationship.
+        """
         self.nodes = [[self.Node((i * self.pixel_size, j * self.pixel_size), self.WHITE) for j in range(self.height // self.pixel_size)] for i in range(self.width // self.pixel_size)]
 
         # Assign neighbors
@@ -130,6 +152,43 @@ class Pathfinding:
 
         pygame.display.update()
 
+    def move_ball_along_path(self, path):
+        """
+        This function Animates the movement of a ball along the final path on the Pygame window.
+        Updates the Pygame window to visualize the moving ball.Prints the coordinates of the ball.
+
+        Parameters:
+            path (list): List of coordinates representing the final path.
+        """
+        ball_position = path[0]
+        ball_radius = 8
+
+        index = 0
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            if index < len(path):
+                ball_position = path[index]
+                index += 1
+
+            self.screen.fill(self.WHITE)  # Clear the screen
+            pygame.draw.lines(self.screen, self.BLUE, False, path, 2)  # Redraw the path
+            pygame.draw.circle(self.screen, self.BLACK, ball_position, ball_radius)  # Draw the moving ball
+
+            # Print the coordinates of the ball
+            font = pygame.font.Font(None, 36)
+            text = font.render(f"Coordinates: {ball_position}", True, self.BLACK)
+            self.screen.blit(text, (10, 10))
+
+            pygame.display.update()
+            pygame.time.delay(500)  
+
+
+
 
 def main():
     pygame.init()
@@ -159,9 +218,11 @@ def main():
     # Draw grid, sub-destinations, and path
     pathfinding.draw_path(path)
 
+    # Move ball along the path and visualize
+    pathfinding.move_ball_along_path(path)
     
     pygame.quit()
 
 if __name__ == "__main__":
     main()
-
+    
