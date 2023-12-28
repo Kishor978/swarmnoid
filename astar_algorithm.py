@@ -186,6 +186,7 @@ class Pathfinding:
 
             pygame.display.update()
             pygame.time.delay(500)  
+        
 
 
 
@@ -225,4 +226,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

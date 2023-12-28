@@ -5,6 +5,7 @@ import pygame
 from pygame.locals import *
 
 from min_distance import find_min_distances
+from astar_algorithm import Pathfinding
 
 # Constants
 HEIGHT = 650
@@ -102,7 +103,7 @@ def mapping_boundary(frame,ids,corners,marker_screen,boundary_marker_centers):
             pygame.display.flip()
     # Update the marker display
     pygame.display.flip()
-pygame.quit()
+# pygame.quit()
 
 
 def aruco_center_position(ids,corners,given_marker_ids):
@@ -122,6 +123,36 @@ def aruco_center_position(ids,corners,given_marker_ids):
                 # output = [list(arr) for arr in center_position]
     return center_position
 
+def find_and_visualize_path(start_point, end_point):
+    """
+    Finds the shortest path between the given start and end points using the A* algorithm,
+    and visualizes the path on a Pygame window.
+
+    Parameters:
+        - start_point (list): The starting point coordinates [x, y].
+        - end_point (list): The ending point coordinates [x, y].
+    """
+
+    # Create an instance of the Pathfinding class
+    pathfinding = Pathfinding(WIDTH, HEIGHT)
+
+    # Create nodes
+    pathfinding.create_nodes()
+
+    # Find the closest nodes to the starting and ending points
+    start_node = pathfinding.nodes[start_point[0] // pathfinding.pixel_size][start_point[1] // pathfinding.pixel_size]
+    end_node = pathfinding.nodes[end_point[0] // pathfinding.pixel_size][end_point[1] // pathfinding.pixel_size]
+
+    # Find the path passing through the closest sub-destination
+    path = pathfinding.astar(start_node, end_node)
+
+    # Draw grid, sub-destinations, and path
+    pathfinding.draw_path(path)
+
+    # Move ball along the path and visualize
+    pathfinding.move_ball_along_path(path)
+
+    # pygame.quit()
 
 def main():
     cap=cv.VideoCapture(0)
@@ -166,12 +197,23 @@ def main():
         merged_list.extend(inorganic_marker_center)
         print(merged_list)
         
-        if len(merged_list)>4 and len(bot_marker_center)>0:
+        if len(merged_list)>3 and len(bot_marker_center)>0:
              # getting the closest waste position
             _,min_point=find_min_distances(bot_marker_center,merged_list)
             _,min_point1=find_min_distances(bot_marker_center,merged_list)
             print("m",min_point)
             print("n",min_point1)
+
+            start=bot_marker_center[0]
+            end=min_point[0]
+            end1=min_point1[0]
+
+            print("ap",start)
+            print("pa",end)
+            pygame.time.delay(5000) 
+            find_and_visualize_path(start,end)
+            find_and_visualize_path(start,end1)
+        
         cv.imshow("Frame",img_gray)
         if cv.waitKey(1) & 0xFF == ord("q"):
             break
