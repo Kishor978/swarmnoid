@@ -123,6 +123,20 @@ def aruco_center_position(ids,corners,given_marker_ids):
                 # output = [list(arr) for arr in center_position]
     return center_position
 
+def bot_head(ids,corners,given_marker_ids):
+    """this function define the head of the bots
+    Returns:head of the bots
+    """
+    head=[]
+    
+    if ids is not None:
+        for i in range(len(ids)):
+            if ids[i][0] in given_marker_ids:
+                print(ids[i][0],corners[i][0])
+                head_bot=(((corners[i][0][0][0]+corners[i][0][1][0])/2),((corners[i][0][0][1]+corners[i][0][1][1])/2))
+                head.append(head_bot)
+    return head_bot
+
 def find_and_visualize_path(start_point, end_point):
     """
     Finds the shortest path between the given start and end points using the A* algorithm,
