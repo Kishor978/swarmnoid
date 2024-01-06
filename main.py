@@ -6,6 +6,7 @@ from pygame.locals import *
 
 from min_distance import find_min_distances
 from astar_algorithm import Pathfinding
+import math
 
 # Constants
 HEIGHT = 650
@@ -133,9 +134,49 @@ def bot_head(ids,corners,given_marker_ids):
         for i in range(len(ids)):
             if ids[i][0] in given_marker_ids:
                 print(ids[i][0],corners[i][0])
-                head_bot=(((corners[i][0][0][0]+corners[i][0][1][0])/2),((corners[i][0][0][1]+corners[i][0][1][1])/2))
+                head_bot=[((corners[i][0][0][0]+corners[i][0][1][0])/2),((corners[i][0][0][1]+corners[i][0][1][1])/2)]
                 head.append(head_bot)
-    return head_bot
+    return head
+
+def angle_between_head_waste(point1, point2, reference_point):
+    """
+    Calculate the angle (in degrees) between two vectors formed by points in 2D space
+    with respect to a reference point.
+
+    Parameters:
+    - point1 (list): A 2D list representing the coordinates of the head of bot.
+    - point2 (list): A 2D list representing the coordinates of the position of waste nearest to the bot.
+    - reference_point (list): A 2D list representing the coordinates of the center of the bot.
+
+    Returns:
+    - float or None: The angle in degrees between the vectors formed by point1 and point2
+      with reference to the given reference_point. Returns None if the magnitude of any
+      vector is zero to avoid math domain errors.
+    """
+    # Calculate vectors from the reference point to the other two points
+    vector1 = [point1[0] - reference_point[0], point1[1] - reference_point[1]]
+    vector2 = [point2[0] - reference_point[0], point2[1] - reference_point[1]]
+
+    # Calculate the dot product of the two vectors
+    dot_product = sum(v1 * v2 for v1, v2 in zip(vector1, vector2))
+
+    # Calculate the magnitudes of the vectors
+    magnitude1 = math.sqrt(sum(v**2 for v in vector1))
+    magnitude2 = math.sqrt(sum(v**2 for v in vector2))
+
+    # Check for division by zero to avoid math domain errors
+    if magnitude1 == 0 or magnitude2 == 0:
+        return None
+
+    # Calculate the cosine of the angle
+    cosine_angle = dot_product / (magnitude1 * magnitude2)
+
+    # Calculate the angle in radians and convert to degrees
+    angle_rad = math.acos(cosine_angle)
+    angle_deg = math.degrees(angle_rad)
+
+    return angle_deg
+
 
 def find_and_visualize_path(start_point, end_point):
     """
@@ -202,6 +243,10 @@ def main():
         destination_marker_center=aruco_center_position(id,corners,DESTINATION_IDS)
         bot_marker_center=aruco_center_position(id,corners,BOT_IDS)
 
+        # Finding the position of head of the point in x axis
+        head_of_bot=bot_head(id,corners,BOT_IDS)
+        print(head_of_bot)
+
         # mapping boundary and drawing convex hall
         mapping_boundary(img_gray,id,corners,marker_screen,boundary_markers_center)
 
@@ -215,18 +260,20 @@ def main():
              # getting the closest waste position
             _,min_point=find_min_distances(bot_marker_center,merged_list)
             _,min_point1=find_min_distances(bot_marker_center,merged_list)
-            print("m",min_point)
-            print("n",min_point1)
+            # print("m",min_point)
+            # print("n",min_point1)
 
             start=bot_marker_center[0]
             end=min_point[0]
             end1=min_point1[0]
+            angle=angle_between_head_waste(head_of_bot[0],end,start)
+            print("angle",angle)
 
-            print("ap",start)
-            print("pa",end)
-            pygame.time.delay(5000) 
-            find_and_visualize_path(start,end)
-            find_and_visualize_path(start,end1)
+            # print("ap",start)
+            # print("pa",end)
+            # pygame.time.delay(5000) 
+            # find_and_visualize_path(start,end)
+            # find_and_visualize_path(start,end1)
         
         cv.imshow("Frame",img_gray)
         if cv.waitKey(1) & 0xFF == ord("q"):
