@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 def distance_to_points(point, points):
   """
@@ -52,7 +53,7 @@ def find_min_distances(fixed_points, points):
         # Print the minimum distance and corresponding point
         min_distance = distances[min_index]
         min_point = points[min_index]
-        print(f"Minimum distance from point {fixed_point}: {min_distance} to point {min_point}")
+        # print(f"Minimum distance from point {fixed_point}: {min_distance} to point {min_point}")
 
         # Add the minimum distance to the list
         min_distances.append(min_distance)
@@ -61,6 +62,63 @@ def find_min_distances(fixed_points, points):
         points.pop(min_index)
 
     return min_distances, min_points
+
+
+def angle_between_head_waste(point1, point2, reference_point):
+    """
+    Calculate the angle (in degrees) between two vectors formed by points in 2D space
+    with respect to a reference point.
+
+    Parameters:
+    - point1 (list): A 2D list representing the coordinates of the head of bot.
+    - point2 (list): A 2D list representing the coordinates of the position of waste nearest to the bot.
+    - reference_point (list): A 2D list representing the coordinates of the center of the bot.
+
+    Returns:
+    - float or None: The angle in degrees between the vectors formed by point1 and point2
+      with reference to the given reference_point. Returns None if the magnitude of any
+      vector is zero to avoid math domain errors.
+    """
+    # Calculate vectors from the reference point to the other two points
+    vector1 = [point1[0] - reference_point[0], point1[1] - reference_point[1]]
+    vector2 = [point2[0] - reference_point[0], point2[1] - reference_point[1]]
+
+    # Calculate the dot product of the two vectors
+    dot_product = sum(v1 * v2 for v1, v2 in zip(vector1, vector2))
+
+    # Calculate the magnitudes of the vectors
+    magnitude1 = math.sqrt(sum(v**2 for v in vector1))
+    magnitude2 = math.sqrt(sum(v**2 for v in vector2))
+
+    # Check for division by zero to avoid math domain errors
+    if magnitude1 == 0 or magnitude2 == 0:
+        return None
+
+    # Calculate the cosine of the angle
+    cosine_angle = dot_product / (magnitude1 * magnitude2)
+
+    # Calculate the angle in radians and convert to degrees
+    angle_rad = math.acos(cosine_angle)
+    angle_deg = math.degrees(angle_rad)
+
+    return angle_deg
+
+def aruco_center_position(ids,corners,given_marker_ids):
+    """this function finds the center of the aruco marker
+    args:
+        given_marker_ids: list of aruco markers id
+
+    Returns: center of the aruco markers
+    """
+    center_position=[]
+    output=[]
+    if ids is not None:
+        for i in range(len(ids)):
+            if ids[i][0] in given_marker_ids:
+                marker_center = np.mean(corners[i][0], axis=0, dtype=np.int32)
+                center_position.append(marker_center)
+                # output = [list(arr) for arr in center_position]
+    return center_position
 
 # # Example usage
 # fixed_points = [[100, 200], [50, 150]]  # List of fixed points

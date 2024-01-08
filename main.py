@@ -4,19 +4,30 @@ from cv2 import aruco
 import pygame
 from pygame.locals import *
 
-from min_distance import find_min_distances
+from min_distance import find_min_distances,angle_between_head_waste,aruco_center_position
 from astar_algorithm import Pathfinding
-import math
+from marker_orientation import bot_head,getMarkerOrientation
 
 # Constants
 HEIGHT = 650
 WIDTH = 650
+MARKER_SIZE=14.9
 
 INORGANIC_TARGET_IDS = {16, 17, 18, 19, 20}
 ORGANIC_TARGET_IDS = {11, 12, 13, 14, 15}
 DESTINATION_IDS = {8, 9}
 BOT_IDS = {5, 6}
 BOUNDARY_MARKER_IDS = {0, 2, 3, 1}
+
+def load_calibration_data(calib_data_path):
+    calib_data = np.load(calib_data_path)
+    camera_matrix = calib_data["camMatrix"]
+    camera_distortion = calib_data["distCoef"]
+    r_vectors = calib_data["rVector"]
+    t_vectors = calib_data["tVector"]
+
+
+    return camera_matrix, camera_distortion
 
 def initialize_pygame():
     """
@@ -28,7 +39,6 @@ def initialize_pygame():
     marker_screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Marker Positions")
     return marker_screen
-
 
 
 def aruco_detector(img,dictionaries,camera_matrix,distortion_coefficients,draw=True):
@@ -106,78 +116,6 @@ def mapping_boundary(frame,ids,corners,marker_screen,boundary_marker_centers):
     pygame.display.flip()
 # pygame.quit()
 
-
-def aruco_center_position(ids,corners,given_marker_ids):
-    """this function finds the center of the aruco marker
-    args:
-        given_marker_ids: list of aruco markers id
-
-    Returns: center of the aruco markers
-    """
-    center_position=[]
-    output=[]
-    if ids is not None:
-        for i in range(len(ids)):
-            if ids[i][0] in given_marker_ids:
-                marker_center = np.mean(corners[i][0], axis=0, dtype=np.int32)
-                center_position.append(marker_center)
-                # output = [list(arr) for arr in center_position]
-    return center_position
-
-def bot_head(ids,corners,given_marker_ids):
-    """this function define the head of the bots
-    Returns:head of the bots
-    """
-    head=[]
-    
-    if ids is not None:
-        for i in range(len(ids)):
-            if ids[i][0] in given_marker_ids:
-                print(ids[i][0],corners[i][0])
-                head_bot=[((corners[i][0][0][0]+corners[i][0][1][0])/2),((corners[i][0][0][1]+corners[i][0][1][1])/2)]
-                head.append(head_bot)
-    return head
-
-def angle_between_head_waste(point1, point2, reference_point):
-    """
-    Calculate the angle (in degrees) between two vectors formed by points in 2D space
-    with respect to a reference point.
-
-    Parameters:
-    - point1 (list): A 2D list representing the coordinates of the head of bot.
-    - point2 (list): A 2D list representing the coordinates of the position of waste nearest to the bot.
-    - reference_point (list): A 2D list representing the coordinates of the center of the bot.
-
-    Returns:
-    - float or None: The angle in degrees between the vectors formed by point1 and point2
-      with reference to the given reference_point. Returns None if the magnitude of any
-      vector is zero to avoid math domain errors.
-    """
-    # Calculate vectors from the reference point to the other two points
-    vector1 = [point1[0] - reference_point[0], point1[1] - reference_point[1]]
-    vector2 = [point2[0] - reference_point[0], point2[1] - reference_point[1]]
-
-    # Calculate the dot product of the two vectors
-    dot_product = sum(v1 * v2 for v1, v2 in zip(vector1, vector2))
-
-    # Calculate the magnitudes of the vectors
-    magnitude1 = math.sqrt(sum(v**2 for v in vector1))
-    magnitude2 = math.sqrt(sum(v**2 for v in vector2))
-
-    # Check for division by zero to avoid math domain errors
-    if magnitude1 == 0 or magnitude2 == 0:
-        return None
-
-    # Calculate the cosine of the angle
-    cosine_angle = dot_product / (magnitude1 * magnitude2)
-
-    # Calculate the angle in radians and convert to degrees
-    angle_rad = math.acos(cosine_angle)
-    angle_deg = math.degrees(angle_rad)
-
-    return angle_deg
-
-
 def find_and_visualize_path(start_point, end_point):
     """
     Finds the shortest path between the given start and end points using the A* algorithm,
@@ -212,22 +150,15 @@ def find_and_visualize_path(start_point, end_point):
 def main():
     cap=cv.VideoCapture(0)
     dictionaries = cv.aruco.DICT_6X6_250
-                # cv.aruco.DICT_6X6_1000,
-                # cv.aruco.DICT_6X6_50,
-                # cv.aruco.DICT_6X6_100,
+
     # initializing pygame
     marker_screen = initialize_pygame()
+
     #  load calibration data
     calib_data_path = "E:\\swarmnoid\\calib_data\\MultiMatrix.npz"
-    calib_data = np.load(calib_data_path)
-
-    # print(calib_data.files)
-    marker_size=14.9
-    cam_mat = calib_data["camMatrix"]
-    dist_coef = calib_data["distCoef"]
-    r_vectors = calib_data["rVector"]
-    t_vectors = calib_data["tVector"]
-
+    cam_mat,dist_coef=load_calibration_data(calib_data_path)
+    
+    
     while True:
         success,img=cap.read()
         img = cv.resize(img, (WIDTH, HEIGHT))
@@ -235,7 +166,8 @@ def main():
 
         # detecting markers and getting cornors
         corners,id=aruco_detector(img_gray,dictionaries,cam_mat,dist_coef,draw=True)
-        
+        # print(corners)
+
         # finding the centers of the aruco markerss
         boundary_markers_center=aruco_center_position(id,corners,BOUNDARY_MARKER_IDS)
         organic_marker_center=aruco_center_position(id,corners,ORGANIC_TARGET_IDS)
@@ -245,7 +177,7 @@ def main():
 
         # Finding the position of head of the point in x axis
         head_of_bot=bot_head(id,corners,BOT_IDS)
-        print(head_of_bot)
+        # print(head_of_bot)
 
         # mapping boundary and drawing convex hall
         mapping_boundary(img_gray,id,corners,marker_screen,boundary_markers_center)
@@ -254,7 +186,7 @@ def main():
         # Merge the lists
         merged_list = organic_marker_center.copy()  # Create a copy of A to avoid modifying the original list
         merged_list.extend(inorganic_marker_center)
-        print(merged_list)
+        # print(merged_list)
         
         if len(merged_list)>3 and len(bot_marker_center)>0:
              # getting the closest waste position
@@ -263,11 +195,15 @@ def main():
             # print("m",min_point)
             # print("n",min_point1)
 
+            # getting the orientation of bots
+            x,y,z,roll,pitch,yam=getMarkerOrientation(corners,MARKER_SIZE)
             start=bot_marker_center[0]
             end=min_point[0]
             end1=min_point1[0]
+
+            # getting the angle between bot_head and waste
             angle=angle_between_head_waste(head_of_bot[0],end,start)
-            print("angle",angle)
+            # print("angle",angle)
 
             # print("ap",start)
             # print("pa",end)
